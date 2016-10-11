@@ -1,0 +1,10 @@
+[
+	{
+		"itemIndex": 1,
+		"itemName": "Bread"
+	},
+	{
+		"itemIndex": 2,
+		"itemName": "Milk"
+	}
+]

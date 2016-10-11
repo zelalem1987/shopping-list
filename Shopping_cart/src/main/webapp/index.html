@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-ng-app="shoppingApp"  data-ng-controller="shoppingController">
+	<head>
+		<style>
+		table {
+			border-collapse: collapse;
+			width: 30%;
+		}
+		
+		th, td {
+			text-align: center;
+			padding: 4px;
+		}
+		
+		tr:nth-child(even) {
+			background-color: #f2f2f2
+		}
+		
+		th {
+			background-color: #cc001b;
+			color: white;
+		}
+		button {
+			background-color: #cc001b;
+			color: white;
+		}
+		input {
+		    border: 2px solid #cc001b;
+		    border-radius: 4px;
+		}
+		p{
+			color: red;
+		}
+		.capitalize::first-letter {
+  			text-transform: uppercase;
+		}
+		</style>	
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>	
+	</head>
+	
+	<h2>My Excellent Grocery List</h2>
+		<body>
+		
+	
+	<script>
+		var shoppingModule = angular.module("shoppingApp", []);
+		
+		shoppingModule.service("shoppingService", function($http){
+			this.get = function(url, callBack){
+				return $http.get(url).success(callBack);
+			}
+		
+			this.post = function(url, obj, callBack){
+				return $http.post(url, obj).success(callBack);
+			}
+		})
+		
+		shoppingModule.service('temp', function () {
+			var lemon;
+			return {
+				getLemon: function () {
+					return lemon;
+				},
+				setLemon: function(value) {
+					lemon  = value;
+				}
+			};
+		});
+		
+		shoppingModule.controller("shoppingController", function($scope, $http, $window, shoppingService, temp) {
+
+			shoppingService.get("http://localhost:8080/training/getList" , 
+					function(data) {
+						$scope.items = data;
+					})
+			
+			$scope.addItem = function() {
+					itemName = $scope.itemName;				
+					if(angular.equals(itemName, "lemon")){
+						temp.setLemon("lemonade");
+				    }else{
+						temp.setLemon(itemName);			    	
+				    }
+					$scope.errortext = "";
+					
+					if(!temp.getLemon()){
+						$scope.errortext = "Please enter the item name first";
+						return;
+					}
+					
+					if($scope.items.indexOf(temp.getLemon()) != -1){
+						$scope.errortext = "The item is already in your shopping list.";
+					}
+					
+					else{
+						shoppingService.post("http://localhost:8080/training/postList ", temp.getLemon(),
+								function(data) {
+									shoppingService.get("http://localhost:8080/training/getList" , 
+											function(data) {
+												$scope.items = data;
+									})
+						})
+					}
+					$scope.itemName = null;
+		}
+	
+		$scope.removeItem = function(index, i){
+			var removeItem = $window.confirm('Are you sure you want to delete Item: ' + i + ' ?');
+			if(removeItem){
+				shoppingService.post("http://localhost:8080/training/deleteList" , index, 
+						function(data) {
+					shoppingService.get("http://localhost:8080/training/getList", 
+							function(data) {
+								$scope.items = data;
+							})
+				})
+				
+			}
+		}
+	})
+	</script>
+		<div >
+			<table class="table">
+				<tr>
+					<th>#</th>					
+					<th>Items</th>
+					<th>Delete</th>
+				</tr>
+				<tr data-ng-repeat="i in items">
+					<td>{{$index + 1}}</td> 
+					<td class="capitalize">{{i}}</td> 
+					<td>
+						[<a href data-ng-click="removeItem($index, i)">X</a>]
+					</td>
+				</tr>
+			</table>
+			<br>
+			<input type="text" data-ng-model="itemName" placeholder="item name"></input><br>
+			<button data-ng-click="addItem()" class="btn btn-small">add item</button>
+			<br>
+			<p>{{errortext}}</p>
+
+		</div>
+		
+	</body>
+</html>
